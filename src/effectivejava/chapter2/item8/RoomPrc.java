@@ -2,37 +2,40 @@ package effectivejava.chapter2.item8;
 
 import java.lang.ref.Cleaner;
 
-// 코드 8-1 cleaner를 안전망으로 활용하는 AutoCloseable 클래스 (44쪽)
-public class Room implements AutoCloseable {
+/**
+ * 자바의 객체 소멸자인 finalizer, cleaner의 사용을 피하라.
+ * 이유1: 오동작, 낮은 성능, 이식성 문제, 예측불가, 느리고 불필요하다.
+ * 이유2: cleaner는 자신을 수행할 스레드를 제어할 수 있지만 여전히 백그라운드에서 수행되며 가비지 컬렉터의 통제하에 있다.
+ * 이유3: 자바 언어는 두 소멸자의 수행 시점뿐 아니라 수행 여부조차 보장하지 않는다.
+ */
+public  class RoomPrc implements AutoCloseable {
+
     private static final Cleaner cleaner = Cleaner.create();
 
-    // 청소가 필요한 자원. 절대 Room을 참조해서는 안 된다!
-    private static class State implements Runnable {
-        int numJunkPiles; // Number of junk piles in this room
+    // 정적이 아닌 중첩 클래스는 자동으로 바깥 객체의 참조를 갖게 된다
+    private static class State implements  Runnable {
+        int numJunkPiles;
 
         State(int numJunkPiles) {
             this.numJunkPiles = numJunkPiles;
         }
 
-        // close 메서드나 cleaner가 호출한다.
         @Override public void run() {
             System.out.println("Cleaning room");
             numJunkPiles = 0;
         }
     }
 
-    // 방의 상태. cleanable과 공유한다.
     private final State state;
 
-    // cleanable 객체. 수거 대상이 되면 방을 청소한다.
     private final Cleaner.Cleanable cleanable;
 
-    public Room(int numJunkPiles) {
+    public  RoomPrc (int numJunkPiles) {
         state = new State(numJunkPiles);
         cleanable = cleaner.register(this, state);
     }
-
-    @Override public void close() {
+    @Override
+    public void close()  {
         cleanable.clean();
     }
 }
